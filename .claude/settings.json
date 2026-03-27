@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//usr/bin/**)",
+      "Read(//usr/lib/**)",
+      "Read(//usr/**)",
+      "Bash(chmod +x /config/workspace/mumble/VoiceIME/gradlew)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)"
+    ],
+    "additionalDirectories": [
+      "/config/workspace/mumble/VoiceIME/.github"
+    ]
+  }
+}
