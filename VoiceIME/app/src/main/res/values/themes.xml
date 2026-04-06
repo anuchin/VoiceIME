@@ -1,22 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.VoiceIME" parent="android:Theme.Material">
-        <item name="colorPrimary">@color/0xFFFF5C35</item>
-        <item name="colorPrimaryDark">@color/0xFF111111</item>
-        <item name="colorPrimaryVariant">@color/0xFF1C1C1C</item>
-        <item name="colorSurface">@color/0xFF1C1C1C</item>
-        <item name="colorOnBackground">@color/0xFFEEEEEE</item>
-        <item name="colorOnSurface">@color/0xFFCCCCCC</item>
-        <item name="colorOnError">@color/0xFFFF4444</item>
-    </style>
-
-    <style name="Theme.VoiceIME" parent="Theme.Material">
+    <style name="Theme.VoiceIME" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">#FF5C35</item>
+        <item name="android:colorPrimaryDark">#111111</item>
+        <item name="android:colorAccent">#00D4AA</item>
+        <item name="android:statusBarColor">#111111</item>
+        <item name="android:navigationBarColor">#111111</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
-        <item name="android:windowLightStatusBar" parentTheme.VoiceIMETheme">
-            <item name="android:windowLightStatusBar" type="boolean</item>
-        <item name="android:windowLightNavigationBar" type="boolean</item>
+        <item name="android:windowBackground">#111111</item>
     </style>
-
 </resources>
-</manifest>
