@@ -75,7 +75,7 @@ class SettingsViewModel @Inject constructor(
         val packageName = context.packageName
 
         val isEnabled = imm.enabledInputMethodList.any { it.packageName == packageName }
-        val isSelected = imm.defaultInputMethod?.contains(packageName) == true
+        val isSelected = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.DEFAULT_INPUT_METHOD)?.contains(packageName) == true
 
         _uiState.update { state ->
             state.copy(isIMEEnabled = isEnabled, isIMESelected = isSelected)
