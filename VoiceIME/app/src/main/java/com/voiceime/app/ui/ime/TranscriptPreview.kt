@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -36,53 +34,68 @@ fun TranscriptPreview(
     text: String,
     onTextChange: (String) -> Unit,
     onCommit: () -> Unit,
-    modifier: Modifier
- Modifier
-        .fillMaxWidth()
-        .background(
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(8.dp)
-        )
-        .padding(8.dp)
-    ) {
-        BasicTextField(
-            value = editedText,
-            onValueChange = { editedText = it; onTextChange(it) },
-            onCommit()
-        },
+    modifier: Modifier = Modifier
+) {
+    var editedText by remember(text) { mutableStateOf(text) }
 
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 16.sp
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        decorationBox = { innerTextField ->
-            if (editedText.isEmpty()) {
+    AnimatedVisibility(
+        visible = text.isNotEmpty(),
+        enter = slideInVertically() + fadeIn()
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .padding(8.dp)
+        ) {
+            BasicTextField(
+                value = editedText,
+                onValueChange = {
+                    editedText = it
+                    onTextChange(it)
+                },
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 16.sp
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
+                    if (editedText.isEmpty()) {
+                        Text(
+                            text = "Transcription will appear here...",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onCommit,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text("Send")
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
-                    text = "Transcription will appear here...",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    text = "${editedText.length} chars",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontSize = 12.sp
                 )
             }
-            innerTextField()
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onCommit,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-            Text(
-                text = "${editedText.length} chars",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                fontSize = 12.sp
-            )
         }
     }
 }

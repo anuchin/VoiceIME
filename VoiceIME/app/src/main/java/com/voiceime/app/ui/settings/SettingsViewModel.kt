@@ -1,27 +1,23 @@
 package com.voiceime.app.ui.settings
 
 import android.content.Context
-import android.content.Intent
-import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
-import androidx.hilt.navigation.compose.hiltNavigationViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.voiceime.app.data.settings.ProviderSettingsRepository
 import com.voiceime.app.domain.model.ProviderType
 import com.voiceime.app.domain.model.RecordingMode
-import com.voiceime.app.domain.model.SttConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 
 data class SettingsUiState(
     val isIMEEnabled: Boolean = false,
@@ -30,10 +26,10 @@ data class SettingsUiState(
     val apiKey: String = "",
     val baseUrl: String = "https://api.groq.com/openai/v1",
     val model: String = "whisper-large-v3",
-    val language: String = "en"
+    val language: String = "en",
     val temperature: Float = 0f,
-    val recordingMode: RecordingMode = RecordingMode.TAP
-    val vadEnabled: Boolean = true
+    val recordingMode: RecordingMode = RecordingMode.TAP,
+    val vadEnabled: Boolean = true,
     val vadThreshold: Int = 500
 )
 
@@ -44,10 +40,16 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
-    val uiState = _uiState.asStateFlow()
+    val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
-    private val config = settingsRepo.getSttConfig()
+    init {
+        loadSettings()
+        checkIMEStatus()
+    }
+
+    private fun loadSettings() {
         viewModelScope.launch {
+            val config = settingsRepo.getSttConfig().first()
             val recordingMode = settingsRepo.getRecordingMode().first()
             val vadEnabled = settingsRepo.isVadEnabled().first()
             val vadThreshold = settingsRepo.getVadSilenceThreshold().first()
@@ -69,16 +71,14 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun checkIMEStatus() {
-        val imm = context.getSystemService(InputMethodManager::class.java)
-        val enabledInputMethods = imm.enabledInputMethodList
-        val selectedInputMethod = imm.defaultInputMethodId
-
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         val packageName = context.packageName
+
+        val isEnabled = imm.enabledInputMethodList.any { it.packageName == packageName }
+        val isSelected = imm.defaultInputMethodId?.contains(packageName) == true
+
         _uiState.update { state ->
-            state.copy(
-                isIMEEnabled = enabledInputMethods.any { it.packageName == packageName },
-                isIMESelected = selectedInputMethod?.contains(packageName) == true
-            )
+            state.copy(isIMEEnabled = isEnabled, isIMESelected = isSelected)
         }
     }
 
@@ -86,11 +86,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepo.updateProviderType(type)
 
-
             val (url, model) = when (type) {
                 ProviderType.GROQ -> "https://api.groq.com/openai/v1" to "whisper-large-v3"
                 ProviderType.OPENAI -> "https://api.openai.com/v1" to "whisper-1"
                 ProviderType.OPENAI_COMPAT -> _uiState.value.baseUrl to _uiState.value.model
+                ProviderType.ON_DEVICE -> "" to ""
             }
 
             settingsRepo.updateBaseUrl(url)
