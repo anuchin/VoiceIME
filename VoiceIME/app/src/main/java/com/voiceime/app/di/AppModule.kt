@@ -41,7 +41,7 @@ object AppModule {
         .addLast(KotlinJsonAdapterFactory())
         .build()
 
-    private val Context.dataStore by androidx.datastore.preferences.preferencesDataStoreDelegate(
+    private val Context.dataStore by androidx.datastore.preferences.preferencesDataStore(
         "voice_ime_settings"
     )
 
