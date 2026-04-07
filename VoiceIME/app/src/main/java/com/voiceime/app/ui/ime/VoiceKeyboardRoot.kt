@@ -96,7 +96,8 @@ fun VoiceKeyboardRoot(
                 )
                 .padding(8.dp)
         ) {
-            when (state) {
+            val currentState = state
+            when (currentState) {
                 is TranscriptionState.Idle -> {
                     Text(
                         text = "Tap or hold the mic to start",
@@ -128,7 +129,7 @@ fun VoiceKeyboardRoot(
                 }
                 is TranscriptionState.Error -> {
                     ErrorBanner(
-                        message = state.message,
+                        message = currentState.message,
                         onDismiss = onDismissError,
                         modifier = Modifier.fillMaxWidth()
                     )
