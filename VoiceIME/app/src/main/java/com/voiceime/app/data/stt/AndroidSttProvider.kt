@@ -2,7 +2,6 @@ package com.voiceime.app.data.stt
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -24,8 +23,6 @@ class AndroidSttProvider @Inject constructor(
 
     override val providerName = "On-Device (Android)"
 
-    val disclaimer = "⚠️ Using on-device recognition — accuracy is lower than cloud models. Connect to the internet for best results."
-
     override suspend fun transcribe(audioFile: File, config: SttConfig): TranscriptionResult =
         suspendCancellableCoroutine { continuation ->
             val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
@@ -37,27 +34,31 @@ class AndroidSttProvider @Inject constructor(
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, config.language)
                 putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE, Uri.fromFile(audioFile))
             }
 
             recognizer.setRecognitionListener(object : RecognitionListener {
                 override fun onResults(results: Bundle) {
-                    val matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    val matches =
+                        results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val text = matches?.firstOrNull() ?: ""
                     recognizer.destroy()
-                    continuation.resume(
-                        TranscriptionResult(
-                            text = text,
-                            provider = providerName
+                    if (continuation.isActive) {
+                        continuation.resume(
+                            TranscriptionResult(
+                                text = text,
+                                provider = providerName
+                            )
                         )
-                    )
+                    }
                 }
 
                 override fun onError(error: Int) {
                     recognizer.destroy()
-                    continuation.resumeWithException(
-                        Exception("On-device STT error code: $error")
-                    )
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(
+                            Exception("On-device STT error code: $error")
+                        )
+                    }
                 }
 
                 override fun onReadyForSpeech(params: Bundle?) {}

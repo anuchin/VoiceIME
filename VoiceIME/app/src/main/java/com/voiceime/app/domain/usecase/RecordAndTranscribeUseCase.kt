@@ -33,11 +33,9 @@ class RecordAndTranscribeUseCase @Inject constructor(
         val config = settingsRepo.getSttConfig().first()
         val provider = providerFactory.getProvider(config.provider)
 
-        return try {
-            provider.transcribe(file, config)
-        } finally {
-            file.delete()
-        }
+        val result = provider.transcribe(file, config)
+        file.delete()
+        return result
     }
 
     fun cancelRecording() {

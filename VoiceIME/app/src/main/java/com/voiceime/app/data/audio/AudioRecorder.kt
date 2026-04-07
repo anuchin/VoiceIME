@@ -61,11 +61,14 @@ class AudioRecorder @Inject constructor(
     fun stopRecording(): File {
         amplitudeJob?.cancel()
         amplitudeJob = null
+        _amplitude.value = 0
 
-        mediaRecorder?.apply {
-            stop()
-            release()
+        try {
+            mediaRecorder?.stop()
+        } catch (_: Exception) {
+            // MediaRecorder can throw if stopped in an invalid state
         }
+        mediaRecorder?.release()
         mediaRecorder = null
 
         return outputFile ?: throw IllegalStateException("No recording in progress")
@@ -74,11 +77,14 @@ class AudioRecorder @Inject constructor(
     fun cancelRecording() {
         amplitudeJob?.cancel()
         amplitudeJob = null
+        _amplitude.value = 0
 
-        mediaRecorder?.apply {
-            stop()
-            release()
+        try {
+            mediaRecorder?.stop()
+        } catch (_: Exception) {
+            // MediaRecorder can throw if stopped in an invalid state
         }
+        mediaRecorder?.release()
         mediaRecorder = null
 
         outputFile?.delete()

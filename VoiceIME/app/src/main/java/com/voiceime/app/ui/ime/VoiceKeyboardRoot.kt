@@ -33,14 +33,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voiceime.app.domain.model.RecordingMode
 import com.voiceime.app.domain.model.TranscriptionState
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun VoiceKeyboardRoot(
-    state: TranscriptionState,
-    transcript: String,
-    showKeyboard: Boolean,
+    stateFlow: StateFlow<TranscriptionState>,
+    transcriptFlow: StateFlow<String>,
+    showKeyboardFlow: StateFlow<Boolean>,
+    amplitudeFlow: StateFlow<Int>,
+    recordingModeFlow: StateFlow<RecordingMode>,
     onMicHoldStart: () -> Unit,
     onMicHoldEnd: () -> Unit,
     onMicTap: () -> Unit,
@@ -49,9 +53,14 @@ fun VoiceKeyboardRoot(
     onBackspace: () -> Unit,
     onToggleKeyboard: () -> Unit,
     onDismissError: () -> Unit,
-    modifier: Modifier = Modifier,
-    recordingMode: RecordingMode = RecordingMode.TAP
+    modifier: Modifier = Modifier
 ) {
+    val state by stateFlow.collectAsStateWithLifecycle()
+    val transcript by transcriptFlow.collectAsStateWithLifecycle()
+    val showKeyboard by showKeyboardFlow.collectAsStateWithLifecycle()
+    val amplitude by amplitudeFlow.collectAsStateWithLifecycle()
+    val recordingMode by recordingModeFlow.collectAsStateWithLifecycle()
+
     val context = LocalContext.current
     val hasPermission = ContextCompat.checkSelfPermission(
         context,
@@ -131,7 +140,7 @@ fun VoiceKeyboardRoot(
 
         // Waveform
         WaveformVisualizer(
-            amplitude = 0,
+            amplitude = amplitude,
             isActive = state is TranscriptionState.Recording,
             modifier = Modifier
                 .fillMaxWidth()

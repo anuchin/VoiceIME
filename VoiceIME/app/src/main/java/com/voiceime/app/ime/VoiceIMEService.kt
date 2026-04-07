@@ -6,7 +6,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.voiceime.app.data.settings.ProviderSettingsRepository
+import com.voiceime.app.domain.model.RecordingMode
 import com.voiceime.app.domain.model.TranscriptionState
 import com.voiceime.app.domain.usecase.RecordAndTranscribeUseCase
 import com.voiceime.app.ui.ime.VoiceKeyboardRoot
@@ -16,12 +25,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class VoiceIMEService : InputMethodService() {
+class VoiceIMEService : InputMethodService(), LifecycleOwner, SavedStateRegistryOwner {
 
     @Inject
     lateinit var recordAndTranscribe: RecordAndTranscribeUseCase
@@ -29,25 +42,49 @@ class VoiceIMEService : InputMethodService() {
     @Inject
     lateinit var settingsRepo: ProviderSettingsRepository
 
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
+    override val savedStateRegistry: SavedStateRegistry
+        get() = savedStateRegistryController.savedStateRegistry
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val _state = MutableStateFlow<TranscriptionState>(TranscriptionState.Idle)
+    val state: StateFlow<TranscriptionState> = _state.asStateFlow()
     private val _showKeyboard = MutableStateFlow(false)
+    val showKeyboard: StateFlow<Boolean> = _showKeyboard.asStateFlow()
     private val _transcript = MutableStateFlow("")
+    val transcript: StateFlow<String> = _transcript.asStateFlow()
+    val amplitude: StateFlow<Int> = recordAndTranscribe.amplitude
+    val recordingMode: StateFlow<RecordingMode> = settingsRepo.getRecordingMode()
+        .stateIn(serviceScope, SharingStarted.Eagerly, RecordingMode.TAP)
 
-    private var isRecording = false
+    private val isRecording = AtomicBoolean(false)
+
+    override fun onCreate() {
+        super.onCreate()
+        savedStateRegistryController.performRestore(null)
+        lifecycleRegistry.currentState = Lifecycle.State.CREATED
+    }
 
     override fun onCreateInputView(): View {
+        lifecycleRegistry.currentState = Lifecycle.State.RESUMED
         return ComposeView(this).apply {
+            setViewTreeLifecycleOwner(this@VoiceIMEService)
+            setViewTreeSavedStateRegistryOwner(this@VoiceIMEService)
             setViewCompositionStrategy(
                 ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
             )
             setContent {
                 MaterialTheme(colorScheme = darkColorScheme()) {
                     VoiceKeyboardRoot(
-                        state = _state.asStateFlow().value,
-                        transcript = _transcript.asStateFlow().value,
-                        showKeyboard = _showKeyboard.asStateFlow().value,
+                        stateFlow = state,
+                        transcriptFlow = transcript,
+                        showKeyboardFlow = showKeyboard,
+                        amplitudeFlow = amplitude,
+                        recordingModeFlow = recordingMode,
                         onMicHoldStart = { startRecording() },
                         onMicHoldEnd = { stopAndTranscribe() },
                         onMicTap = { toggleRecording() },
@@ -69,6 +106,7 @@ class VoiceIMEService : InputMethodService() {
                 _transcript.value = ""
                 recordAndTranscribe.startRecording()
             } catch (e: Exception) {
+                isRecording.set(false)
                 _state.value = TranscriptionState.Error(e.message ?: "Failed to start recording")
             }
         }
@@ -90,12 +128,11 @@ class VoiceIMEService : InputMethodService() {
     }
 
     private fun toggleRecording() {
-        if (isRecording) {
+        if (isRecording.getAndSet(false)) {
             stopAndTranscribe()
-            isRecording = false
         } else {
+            isRecording.set(true)
             startRecording()
-            isRecording = true
         }
     }
 
@@ -106,15 +143,15 @@ class VoiceIMEService : InputMethodService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         serviceScope.cancel()
         recordAndTranscribe.cancelRecording()
     }
 
     override fun onWindowHidden() {
         super.onWindowHidden()
-        if (isRecording) {
+        if (isRecording.getAndSet(false)) {
             recordAndTranscribe.cancelRecording()
-            isRecording = false
             _state.value = TranscriptionState.Idle
         }
     }

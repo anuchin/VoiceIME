@@ -93,11 +93,7 @@ fun SettingsScreen(
         SettingsSection(title = "Recording") {
             RecordingSection(
                 recordingMode = uiState.recordingMode,
-                vadEnabled = uiState.vadEnabled,
-                vadThreshold = uiState.vadThreshold,
-                onRecordingModeChange = { viewModel.updateRecordingMode(it) },
-                onVadEnabledChange = { viewModel.updateVadEnabled(it) },
-                onVadThresholdChange = { viewModel.updateVadThreshold(it) }
+                onRecordingModeChange = { viewModel.updateRecordingMode(it) }
             )
         }
 
@@ -282,11 +278,7 @@ private fun ApiConfigSection(
 @Composable
 private fun RecordingSection(
     recordingMode: RecordingMode,
-    vadEnabled: Boolean,
-    vadThreshold: Int,
-    onRecordingModeChange: (RecordingMode) -> Unit,
-    onVadEnabledChange: (Boolean) -> Unit,
-    onVadThresholdChange: (Int) -> Unit
+    onRecordingModeChange: (RecordingMode) -> Unit
 ) {
     Text("Recording Mode")
     Row(
@@ -300,29 +292,6 @@ private fun RecordingSection(
                 label = { Text(mode.name) }
             )
         }
-    }
-
-    Spacer(modifier = Modifier.height(8.dp))
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("Auto-stop on silence")
-        Switch(
-            checked = vadEnabled,
-            onCheckedChange = onVadEnabledChange
-        )
-    }
-
-    if (vadEnabled) {
-        Text("Silence Sensitivity: $vadThreshold")
-        Slider(
-            value = vadThreshold.toFloat(),
-            onValueChange = { onVadThresholdChange(it.toInt()) },
-            valueRange = 100f..2000f
-        )
     }
 }
 

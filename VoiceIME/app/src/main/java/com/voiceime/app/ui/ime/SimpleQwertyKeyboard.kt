@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun SimpleQwertyKeyboard(
@@ -183,6 +186,7 @@ private fun Key(
 ) {
     var isPressed by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = modifier
@@ -196,9 +200,12 @@ private fun Key(
                 interactionSource = interactionSource,
                 indication = null
             ) {
-                isPressed = true
                 onClick()
-                isPressed = false
+                scope.launch {
+                    isPressed = true
+                    delay(100)
+                    isPressed = false
+                }
             },
         contentAlignment = Alignment.Center
     ) {
