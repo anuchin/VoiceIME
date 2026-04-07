@@ -31,7 +31,7 @@ fun WaveformVisualizer(
         .padding(horizontal = 8.dp)
 ) {
     val barCount = 20
-    val barHeights = remember { mutableStateListOf<Float>().apply { repeat(barCount) { add(0.1f) } }
+    val barHeights = remember { mutableStateListOf<Float>().apply { repeat(barCount) { add(0.1f) } } }
 
     val infiniteTransition = rememberInfiniteTransition(label = "waveform")
     val phase by infiniteTransition.animateFloat(
