@@ -41,12 +41,14 @@ object AppModule {
         .addLast(KotlinJsonAdapterFactory())
         .build()
 
+    private val Context.dataStore by androidx.datastore.preferences.preferencesDataStoreDelegate(
+        "voice_ime_settings"
+    )
+
     @Provides
     @Singleton
     fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        androidx.datastore.preferences.PreferenceDataStoreFactory.create(
-            produceFile = { context.preferencesDataStoreFile("voice_ime_settings") }
-        )
+        context.dataStore
 
     @Provides
     @Singleton
