@@ -57,9 +57,11 @@ class VoiceIMEService : InputMethodService(), LifecycleOwner, SavedStateRegistry
     val showKeyboard: StateFlow<Boolean> = _showKeyboard.asStateFlow()
     private val _transcript = MutableStateFlow("")
     val transcript: StateFlow<String> = _transcript.asStateFlow()
-    val amplitude: StateFlow<Int> = recordAndTranscribe.amplitude
-    val recordingMode: StateFlow<RecordingMode> = settingsRepo.getRecordingMode()
-        .stateIn(serviceScope, SharingStarted.Eagerly, RecordingMode.TAP)
+    val amplitude: StateFlow<Int> by lazy { recordAndTranscribe.amplitude }
+    val recordingMode: StateFlow<RecordingMode> by lazy {
+        settingsRepo.getRecordingMode()
+            .stateIn(serviceScope, SharingStarted.Eagerly, RecordingMode.TAP)
+    }
 
     private val isRecording = AtomicBoolean(false)
 
